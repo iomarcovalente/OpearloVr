@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "1079530042320",
+    "firebase_url": "https://virtual-crime-android.firebaseio.com",
+    "project_id": "virtual-crime-android",
+    "storage_bucket": "virtual-crime-android.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1079530042320:android:276a3f688457aec5",
+        "android_client_info": {
+          "package_name": "marco.io.opearlovr"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1079530042320-n0h5oacp35g55u31u8lam3a9itu5ujd4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmv2E__YpWXJrKRz7oT2AseLlkx7W2ijk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

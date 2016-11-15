@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:text="TextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/welcomeUser" />
+
+    <Button
+        android:text="@string/button_start"
+        android:layout_height="wrap_content"
+        android:onClick="startNewGame"
+        android:id="@+id/startBtn"
+        android:layout_marginBottom="20px"
+        android:backgroundTint="@android:color/holo_blue_dark"
+        android:textColor="@android:color/white"
+        android:layout_width="match_parent"
+        android:layout_marginTop="50px" />
+
+    <Button
+        android:text="@string/button_options"
+        android:layout_height="wrap_content"
+        android:id="@+id/optionBtn"
+        android:layout_marginBottom="20px"
+        android:backgroundTint="@android:color/holo_blue_dark"
+        android:textColor="@android:color/white"
+        android:layout_width="match_parent" />
+
+    <Button
+        android:text="@string/button_quit"
+        android:layout_height="wrap_content"
+        android:id="@+id/quitBtn"
+        android:backgroundTint="@android:color/holo_blue_dark"
+        android:textColor="@android:color/white"
+        android:layout_width="match_parent" />
+
+</LinearLayout>
