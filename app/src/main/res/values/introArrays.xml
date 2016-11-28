@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="chapterOne">
+        <item>You are investigating the Oscar Files...\n\n\n Tap to continue.</item>
+        <item>You are located in Oscar Pistorius\' apartment.\n This investigation is filed under: Pistorius Forensic evidences.</item>
+        <item>Your colleague is with you, waiting for instructions\n He has got a registration recorded from an officer who arrested Pistorius earlier on.\n He also got a hold of a lady who heard what happened... </item>
+        <item>What do you want to do? \n\n\n Tap to speak.</item>
+    </string-array>
+</resources>

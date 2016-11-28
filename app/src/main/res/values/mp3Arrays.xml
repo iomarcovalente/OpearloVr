@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="chapterOneMp3">
+        <item>https://s3.amazonaws.com/iomarco-projects/introRec.mp3</item>
+        <item>https://s3.amazonaws.com/virtual-crime/OP2-+Oscar%27s+Testimony.mp3</item>
+        <item>https://s3.amazonaws.com/virtual-crime/OP1-Eye+Witness+Account.mp3</item>
+    </string-array>
+    <string-array name="chapterTwoMp3">
+        <item>https://s3.amazonaws.com/iomarco-projects/knowMore.mp3</item>
+        <item>https://s3.amazonaws.com/iomarco-projects/chapterPurchased.mp3</item>
+    </string-array>
+</resources>

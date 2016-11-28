@@ -1,10 +1,14 @@
 package marco.io.opearlovr;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.os.AsyncTask;
 import android.speech.RecognizerIntent;
 import android.support.v7.app.ActionBar;
@@ -21,8 +25,11 @@ import android.speech.SpeechRecognizer;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.MediaController;
 import android.widget.TextSwitcher;
 import android.widget.TextView;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import android.util.Log;
 import android.view.ViewGroup;
@@ -32,182 +39,197 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
+import com.google.vrtoolkit.cardboard.CardboardActivity;
+
+import org.rajawali3d.cardboard.RajawaliCardboardRenderer;
+import org.rajawali3d.cardboard.RajawaliCardboardView;
+
 import java.util.List;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- */
-public class StoryLineActivity extends AppCompatActivity {
-    /**
-     * Whether or not the system UI should be auto-hidden after
-     * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
-     */
-    private static final boolean AUTO_HIDE = true;
-    private static final int SPEECH_REQUEST_CODE = 0;
-    public TextView textView;
+public class StoryLineActivity extends CardboardActivity
+        implements MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnPreparedListener {
 
-    private TextSwitcher textSwitcher;
-    private ImageView mImageView;
-    private ProgressBar mProgressBar;
+    public OverlayView mOverlayView;
+
+    private static final int SPEECH_REQUEST_CODE = 0;
+
+//    private ProgressBar mProgressBar;
     private int mDelay = 500;
 
-    public Button beginBtn;
-    public Button switchBtn;
+//    public Button beginBtn;
+//    public Button switchBtn;
 
     private static final String TAG = "MyStt3Activity";
     private SpeechRecognizer sr;
+//    public String speechResult = "...";
+    public int picAddress;
+    public String[] introAudio;
 
-    String m1 = "Lorem ipsum dolor sit amet, ex nostrum mandamus abhorreant nam, vero saepe nusquam his ut. Latine voluptaria posidonium an eam. Tation cetero repudiare in eam. An quot platonem nam, nam graeco splendide ne, usu veniam vidisse oporteat in. Quo eu assueverit instructior, aliquid detraxit ei eam, mei dico graeco ex.";
-    String textToShow[]={m1,"Your Message","New In Technology","New Articles","Business News","What IS New"};
-    int messageCount=textToShow.length;
+//    String[] introChapter;
+
+    String[] oscarOpt = {"oscar","offender","pistorius","man","him","his","he","purchase"};
+    String[] ladyOpt = {"lady","witness","her","she","her"};
+    //int messageCount=introChapterOne.length;
     // to keep current Index of text
-    int currentIndex=-1;
+    //int currentIndex=-1;
+    int tap = 0;
+    public boolean intro = false;
+    public boolean loading = true;
 
-    /**
-     * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
-     * user interaction before hiding the system UI.
-     */
-    private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
+    private MediaPlayer mMediaPlayer;
+    //private final Handler handler = new Handler(); // for visible updates on a progress bar for mp3 files
 
-    /**
-     * Some older devices needs a small delay between UI widget updates
-     * and a change of the status and navigation bar.
-     */
-    private static final int UI_ANIMATION_DELAY = 300;
-    private final Handler mHideHandler = new Handler();
-    private View mContentView;
-    private final Runnable mHidePart2Runnable = new Runnable() {
-        @SuppressLint("InlinedApi")
-        @Override
-        public void run() {
-            // Delayed removal of status and navigation bar
-
-            // Note that some of these constants are new as of API 16 (Jelly Bean)
-            // and API 19 (KitKat). It is safe to use them, as they are inlined
-            // at compile-time and do nothing on earlier devices.
-            mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-        }
-    };
-    private View mControlsView;
-    private final Runnable mShowPart2Runnable = new Runnable() {
-        @Override
-        public void run() {
-            // Delayed display of UI elements
-            ActionBar actionBar = getSupportActionBar();
-            if (actionBar != null) {
-                actionBar.show();
-            }
-            mControlsView.setVisibility(View.VISIBLE);
-        }
-    };
-    private boolean mVisible;
-    private final Runnable mHideRunnable = new Runnable() {
-        @Override
-        public void run() {
-            hide();
-        }
-    };
-    /**
-     * Touch listener to use for in-layout UI controls to delay hiding the
-     * system UI. This is to prevent the jarring behavior of controls going away
-     * while interacting with activity UI.
-     */
-    private final View.OnTouchListener mDelayHideTouchListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            if (AUTO_HIDE) {
-                delayedHide(AUTO_HIDE_DELAY_MILLIS);
-            }
-            return false;
-        }
-    };
-
+    //intro mp3 https://s3.amazonaws.com/iomarco-projects/introRec.mp3
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_story_line);
 
-        mVisible = true;
-        mControlsView = findViewById(R.id.fullscreen_content_controls);
-        mContentView = findViewById(R.id.fullscreen_content);
-        beginBtn = (Button) findViewById(R.id.beginBtn);
-        switchBtn = (Button) findViewById(R.id.switchBtn);
-        textSwitcher = (TextSwitcher) findViewById(R.id.textSwitcher);
-        // Set the ViewFactory of the TextSwitcher that will create TextView object when asked
-        textSwitcher.setFactory(new ViewSwitcher.ViewFactory() {
+        mMediaPlayer = new MediaPlayer();
+        mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        mMediaPlayer.setOnBufferingUpdateListener(this);
+        mMediaPlayer.setOnCompletionListener(this);
+        mMediaPlayer.setOnPreparedListener(this);
 
-            public View makeView() {
-                // create new textView and set the properties like color, size etc
-                TextView myText = new TextView(StoryLineActivity.this);
-                myText.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-                myText.setTextSize(18);
-                myText.setTextColor(Color.WHITE) ;
-                return myText;
-            }
-        });
+        RajawaliCardboardView view = (RajawaliCardboardView) findViewById(R.id.rajawali_cardboardView);
+        setCardboardView(view);
 
-        // Declare the in and out animations and initialize them
-        Animation in = AnimationUtils.loadAnimation(this,android.R.anim.slide_in_left);
-        Animation out = AnimationUtils.loadAnimation(this,android.R.anim.slide_out_right);
-        // set the animation type of textSwitcher
-        textSwitcher.setInAnimation(in);
-        textSwitcher.setOutAnimation(out);
+        picAddress = getIntent().getExtras().getInt(MainActivity.EXTRA_PICADDRESS);
+        introAudio = getIntent().getExtras().getStringArray(MainActivity.EXTRA_INTROAUDIO);
 
-        // Set up the user interaction to manually show or hide the system UI.
-        mContentView.setOnClickListener(new View.OnClickListener() {
+        final RajawaliCardboardRenderer renderer = new MyRenderer(this, picAddress);
+
+        view.setRenderer(renderer);
+        view.setSurfaceRenderer(renderer);
+
+//        introChapter = res.getStringArray(R.array.chapterOne);
+
+        sr = SpeechRecognizer.createSpeechRecognizer(this);
+        sr.setRecognitionListener(new listener());
+
+        mOverlayView = (OverlayView) findViewById(R.id.overlay);
+
+        mOverlayView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggle();
+//                String s = "";
+//                for(int index = 0; index<((ViewGroup)view).getChildCount(); ++index) {
+//                    View nextChild = ((ViewGroup)view).getChildAt(index);
+//                    s += nextChild.getId();
+//                    s += " ";
+//                }
+//                Toast.makeText(getBaseContext(), s, Toast.LENGTH_LONG).show();
+                if (loading) {
+                    Toast.makeText(getBaseContext(), "Still Loading", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                else if (!loading && intro) {
+//                    try {
+//                        mOverlayView.setContent(introChapter[introIdx]);
+//                        introIdx++;
+//                    } catch (Exception e){
+//                        intro = false;
+//                        e.printStackTrace();
+//                    }
+                    if (!mMediaPlayer.isPlaying()) {
+                        mMediaPlayer.start();
+                    } else {
+                        mMediaPlayer.pause();
+                    }
+                }
+                if (!loading && !intro) {
+                    mMediaPlayer.reset();
+                    startSpeechRecognizer();
+                }
             }
         });
+
+//        beginBtn = (Button) findViewById(R.id.beginBtn);
+//        switchBtn = (Button) findViewById(R.id.switchBtn);
+//        textSwitcher = (TextSwitcher) findViewById(R.id.textSwitcher);
+//        // Set the ViewFactory of the TextSwitcher that will create TextView object when asked
+//        textSwitcher.setFactory(new ViewSwitcher.ViewFactory() {
+//
+//            public View makeView() {
+//                // create new textView and set the properties like color, size etc
+//                TextView myText = new TextView(StoryLineActivity.this);
+//                myText.setGravity(Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+//                myText.setTextSize(18);
+//                myText.setTextColor(Color.WHITE) ;
+//                return myText;
+//            }
+//        });
+//
+//        // Declare the in and out animations and initialize them
+//        Animation in = AnimationUtils.loadAnimation(this,android.R.anim.slide_in_left);
+//        Animation out = AnimationUtils.loadAnimation(this,android.R.anim.slide_out_right);
+//        // set the animation type of textSwitcher
+//        textSwitcher.setInAnimation(in);
+//        textSwitcher.setOutAnimation(out);
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
         // while interacting with the UI.
         //findViewById(R.id.dummy_button).setOnTouchListener(mDelayHideTouchListener);
 
-        Intent intent = getIntent();
-        String message = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
-        textView = (TextView) findViewById(R.id.fullscreen_content);
-        textView.setText(message);
+//        Intent intent = getIntent();
+//        String message = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
+//        textView = (TextView) findViewById(R.id.fullscreen_content);
+//        textView.setText(message);
 
-        mImageView = (ImageView) findViewById(R.id.imageView);
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        sr = SpeechRecognizer.createSpeechRecognizer(this);
-        sr.setRecognitionListener(new listener());
-
-
-        beginBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startSpeechRecognizer();
-            }
-        });
-
-        switchBtn.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                currentIndex++;
-                // If index reaches maximum reset it
-                if(currentIndex==messageCount)
-                    currentIndex=0;
-                textSwitcher.setText(textToShow[currentIndex]);
-            }
-        });
+//        mImageView = (ImageView) findViewById(R.id.imageView);
+//        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
+//        sr = SpeechRecognizer.createSpeechRecognizer(this);
+//        sr.setRecognitionListener(new listener());
+//
+//
+//        beginBtn.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                startSpeechRecognizer();
+//            }
+//        });
+//
+//        switchBtn.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                currentIndex++;
+//                // If index reaches maximum reset it
+//                if(currentIndex==messageCount)
+//                    currentIndex=0;
+//                textSwitcher.setText(textToShow[currentIndex]);
+//            }
+//        });
 
     }
 
     @Override
     protected void onStart(){
         super.onStart();
-        new LoadCrimeScene().execute(R.mipmap.port);
+        new LoadCrimeScene().execute();
+//        try {
+//            mMediaPlayer.setDataSource(introMp3[introIdx]);
+//            mMediaPlayer.prepare(); // you must call this method after setup the datasource in setDataSource method. After calling prepare() the instance of MediaPlayer starts load data from URL to internal buffer.
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+    }
+
+    @Override
+    protected void onStop(){
+        super.onStop();
+        if (mMediaPlayer != null) mMediaPlayer.release();
+    }
+
+    @Override
+    public void finish() {
+        Intent data = new Intent();
+        if( tap == 2 ) {
+            setResult(RESULT_OK,data);
+        }
+        else setResult(RESULT_CANCELED, data);
+        super.finish();
     }
     /*
     @Override
@@ -216,6 +238,30 @@ public class StoryLineActivity extends AppCompatActivity {
 
     }
     */
+
+
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        loading = mOverlayView.setProgress(percent);
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp) {
+        if (!loading && !intro) {
+            mOverlayView.setBackgroundColor(Color.argb(0, 49, 89, 106));
+            mOverlayView.setContent("");
+            intro = true;
+        }
+        mMediaPlayer.start();
+    }
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        /** MediaPlayer onCompletion event handler. Method which calls when song playing is complete*/
+        intro = false;
+        if (tap == 2) {
+            finish();
+        }
+    }
 
     class listener implements RecognitionListener
     {
@@ -237,31 +283,48 @@ public class StoryLineActivity extends AppCompatActivity {
         }
         public void onEndOfSpeech()
         {
-            Log.d(TAG, "onEndofSpeech");
+            Log.d(TAG, "onEndOfSpeech");
         }
         public void onError(int error) {
             Log.d(TAG,  "error " +  error);
-            textView.setText("error " + error);
+            //textView.setText("error " + error);
         }
         public void onResults(Bundle results)
         {
             String str = new String();
+
             Log.d(TAG, "onResults " + results);
             ArrayList data = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            if (data.get(0).equals("next")|data.get(0).equals("more")){
-                currentIndex++;
-                // If index reaches maximum reset it
-                if(currentIndex==messageCount)
-                    currentIndex=0;
-                textSwitcher.setText(textToShow[currentIndex]);
+            str = data.get(0).toString();
+//            if (data.get(0).toLowerCase().contains("oscar")|data.get(0).equals("more")){
+//                currentIndex++;
+//                // If index reaches maximum reset it
+//                if(currentIndex==messageCount)
+//                    currentIndex=0;
+//                textSwitcher.setText(textToShow[currentIndex]);
+//            }
+            if (stringContainsItemFromList(str.toLowerCase(),oscarOpt)){
+                try {
+                    mMediaPlayer.setDataSource(introAudio[1]);
+                    mMediaPlayer.prepare();
+                    tap++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            for (int i = 0; i < data.size(); i++)
-            {
-
+            else if (stringContainsItemFromList(str.toLowerCase(),ladyOpt)){
+                try {
+                    mMediaPlayer.setDataSource(introAudio[2]);
+                    mMediaPlayer.prepare();
+                    tap++;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            for (int i = 0; i < data.size(); i++) {
                 Log.d(TAG, "result " + data.get(i));
-                str += data.get(i);
             }
-            textView.setText("results: "+String.valueOf(data.size()));
+            //textView.setText("results: "+String.valueOf(data.size()));
         }
         public void onPartialResults(Bundle partialResults)
         {
@@ -285,37 +348,41 @@ public class StoryLineActivity extends AppCompatActivity {
 
     }
 
-    class LoadCrimeScene extends AsyncTask<Integer, Integer, Bitmap> {
-
+    class LoadCrimeScene extends AsyncTask<Void,Integer ,Void> {
 
         @Override
         protected void onPreExecute() {
-            mProgressBar.setVisibility(ProgressBar.VISIBLE);
-        }
 
-        @Override
-        protected Bitmap doInBackground(Integer... resId) {
-            Bitmap tmp = BitmapFactory.decodeResource(getResources(), resId[0]);
-            // simulating long-running operation
-            for (int i = 1; i < 11; i++) {
-                sleep();
-                publishProgress(i * 10);
-            }
-            return tmp;
         }
 
         @Override
         protected void onProgressUpdate(Integer... values) {
-            mProgressBar.setProgress(values[0]);
+//            loading = mOverlayView.setProgress(values[0]);
+//            if (!loading) intro = true;
         }
 
         @Override
-        protected void onPostExecute(Bitmap result) {
-            mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-            mImageView.setImageBitmap(result);
-            beginBtn.setVisibility(View.VISIBLE);
-            switchBtn.setVisibility(View.VISIBLE);
-            //displaySpeechRecognizer();
+        protected Void doInBackground(Void... params) {
+            // simulating long-running operation
+//            for (int j = 0, i = 0; i < 100; j = (int)((Math.random())*10)+5) {
+//                sleep();
+//                i += j;
+//                publishProgress(i);
+//            }
+            sleep();
+            try {
+                mMediaPlayer.setDataSource(introAudio[0]);
+                mMediaPlayer.prepare(); // you must call this method after setup the datasource in setDataSource method. After calling prepare() the instance of MediaPlayer starts load data from URL to internal buffer.
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+
+        @Override
+        protected void onPostExecute(Void result) {
+
         }
 
         private void sleep() {
@@ -327,85 +394,43 @@ public class StoryLineActivity extends AppCompatActivity {
         }
     }
 
-    // Create an intent that can start the Speech Recognizer activity
-    private void displaySpeechRecognizer() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-    // Start the activity, the intent will be populated with the speech text
-        startActivityForResult(intent, SPEECH_REQUEST_CODE);
-    }
+//    // Create an intent that can start the Speech Recognizer activity
+//    private void displaySpeechRecognizer() {
+//        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+//        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+//                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+//    // Start the activity, the intent will be populated with the speech text
+//        startActivityForResult(intent, SPEECH_REQUEST_CODE);
+//    }
 
-    // This callback is invoked when the Speech Recognizer returns.
-    // This is where you process the intent and extract the speech text from the intent.
-    /*@Override
-    protected void onActivityResult(int requestCode, int resultCode,
-                                    Intent data) {
-        String spokenText = "";
-        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
-            List<String> results = data.getStringArrayListExtra(
-                    RecognizerIntent.EXTRA_RESULTS);
-            spokenText = results.get(0);
-            textView.setText("You said:\n" + spokenText);
+//    // This callback is invoked when the Speech Recognizer returns.
+//    // This is where you process the intent and extract the speech text from the intent.
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode,
+//                                    Intent data) {
+//        String spokenText = "";
+//        if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
+//            List<String> results = data.getStringArrayListExtra(
+//                    RecognizerIntent.EXTRA_RESULTS);
+//            spokenText = results.get(0);
+//            textView.setText("You said:\n" + spokenText);
+//        }
+//        if(spokenText != "") {
+//            if ( spokenText.equals("next") ) new LoadCrimeScene().execute(R.mipmap.ferry);
+//            else Toast.makeText(this, "Choice not valid", Toast.LENGTH_SHORT).show();
+//
+//        }
+//        super.onActivityResult(requestCode, resultCode, data);
+//    }
+    public static boolean stringContainsItemFromList(String inputString, String[] items)
+    {
+        for(int i =0; i < items.length; i++)
+        {
+            if(inputString.contains(items[i]))
+            {
+                return true;
+            }
         }
-        if(spokenText != "") {
-            if ( spokenText.equals("next") ) new LoadCrimeScene().execute(R.mipmap.ferry);
-            else Toast.makeText(this, "Choice not valid", Toast.LENGTH_SHORT).show();
-
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-    }*/
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-
-        // Trigger the initial hide() shortly after the activity has been
-        // created, to briefly hint to the user that UI controls
-        // are available.
-        delayedHide(100);
-    }
-
-    private void toggle() {
-        if (mVisible) {
-            hide();
-        } else {
-            show();
-        }
-    }
-
-    private void hide() {
-        // Hide UI first
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.hide();
-        }
-        mControlsView.setVisibility(View.GONE);
-        mVisible = false;
-
-        // Schedule a runnable to remove the status and navigation bar after a delay
-        mHideHandler.removeCallbacks(mShowPart2Runnable);
-        mHideHandler.postDelayed(mHidePart2Runnable, UI_ANIMATION_DELAY);
-    }
-
-    @SuppressLint("InlinedApi")
-    private void show() {
-        // Show the system bar
-        mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        mVisible = true;
-
-        // Schedule a runnable to display UI elements after a delay
-        mHideHandler.removeCallbacks(mHidePart2Runnable);
-        mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
-    }
-
-    /**
-     * Schedules a call to hide() in [delay] milliseconds, canceling any
-     * previously scheduled calls.
-     */
-    private void delayedHide(int delayMillis) {
-        mHideHandler.removeCallbacks(mHideRunnable);
-        mHideHandler.postDelayed(mHideRunnable, delayMillis);
+        return false;
     }
 }

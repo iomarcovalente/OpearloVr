@@ -7,6 +7,7 @@ import android.app.Dialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,8 +30,9 @@ import com.google.firebase.auth.FirebaseUser;
 public class MainActivity extends AppCompatActivity  implements
         GoogleApiClient.OnConnectionFailedListener {
 
+    public final static String EXTRA_PICADDRESS = "io.marco.opearlovr.PICADDRESS";
+    public final static String EXTRA_INTROAUDIO = "io.marco.opearlovr.INTROAUDIO";
 
-    public final static String EXTRA_MESSAGE = "io.marco.opearlovr.MESSAGE";
     public static final String ANONYMOUS = "anonymous";
 
     private Context mContext;
@@ -42,12 +44,18 @@ public class MainActivity extends AppCompatActivity  implements
     private AlarmManager mAlarmManager;
     private Intent mNotificationReceiverIntent;
     private PendingIntent mNotificationReceiverPendingIntent;
-
     private static final long INITIAL_ALARM_DELAY = 30 * 1000L;
     private static boolean NOTIFICATION_STATE = true;
+
     private GoogleApiClient mGoogleApiClient;
     private static final String TAG = "MainActivity";
-    private static final String TAG_OPT = "OptionsDialog";
+
+    private final int customRequest = 1;
+    public int picIndex = 0;
+    public int audioIndex = 0;
+
+    private final int pics [] = {R.mipmap.flatpano,R.mipmap.panorama};
+    private String[][] audio = new String[2][3];
 
     @Override
     public void onSaveInstanceState(Bundle bundle)
@@ -62,7 +70,7 @@ public class MainActivity extends AppCompatActivity  implements
 
         setContentView(R.layout.activity_main);
         mContext=getApplicationContext();
-
+        //initNotifications();
         mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
         // Create an Intent to broadcast to the AlarmNotificationReceiver
@@ -115,17 +123,33 @@ public class MainActivity extends AppCompatActivity  implements
                 finish();
             }
         });
-
+        Resources res = getResources();
+        audio[0] = res.getStringArray(R.array.chapterOneMp3);
+        audio[1] = res.getStringArray(R.array.chapterTwoMp3);
     }
+
     /** Called when the user clicks the start button */
     public void startNewGame(View view) {
         Intent intent = new Intent(this, StoryLineActivity.class);
-/*        EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = editText.getText().toString();*/
-        intent.putExtra(EXTRA_MESSAGE, "Loading\nnew story");
-        startActivity(intent);
+        Bundle extras = new Bundle();
+        extras.putInt(EXTRA_PICADDRESS, pics[picIndex]);
+        extras.putStringArray(EXTRA_INTROAUDIO, audio[audioIndex]);
+        intent.putExtras(extras);
+        startActivityForResult(intent,customRequest);
     }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
+        if (resultCode == RESULT_CANCELED) {
+            return;
+        }
+        if (resultCode == RESULT_OK){
+            picIndex++;
+            audioIndex++;
+            startNewGame(findViewById(android.R.id.content).getRootView());
+        }
+    }
     public class OptionsDialogClass extends Dialog implements
             android.view.View.OnClickListener {
 
