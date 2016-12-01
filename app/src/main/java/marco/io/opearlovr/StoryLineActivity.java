@@ -47,7 +47,7 @@ import org.rajawali3d.cardboard.RajawaliCardboardView;
 import java.util.List;
 
 public class StoryLineActivity extends CardboardActivity
-        implements MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnPreparedListener {
+        implements MediaPlayer.OnCompletionListener, MediaPlayer.OnBufferingUpdateListener, MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener{
 
     public OverlayView mOverlayView;
 
@@ -67,8 +67,8 @@ public class StoryLineActivity extends CardboardActivity
 
 //    String[] introChapter;
 
-    String[] oscarOpt = {"oscar","offender","pistorius","man","him","his","he","purchase"};
-    String[] ladyOpt = {"lady","witness","her","she","her"};
+    String[] oscarOpt = {"oscar","offender","pistorius","man","him","his","purchase"};
+    String[] ladyOpt = {"lady","witness","her","she","woman"};
     //int messageCount=introChapterOne.length;
     // to keep current Index of text
     //int currentIndex=-1;
@@ -91,6 +91,7 @@ public class StoryLineActivity extends CardboardActivity
         mMediaPlayer.setOnBufferingUpdateListener(this);
         mMediaPlayer.setOnCompletionListener(this);
         mMediaPlayer.setOnPreparedListener(this);
+        mMediaPlayer.setOnErrorListener(this);
 
         RajawaliCardboardView view = (RajawaliCardboardView) findViewById(R.id.rajawali_cardboardView);
         setCardboardView(view);
@@ -135,7 +136,10 @@ public class StoryLineActivity extends CardboardActivity
                     if (!mMediaPlayer.isPlaying()) {
                         mMediaPlayer.start();
                     } else {
-                        mMediaPlayer.pause();
+//                        mMediaPlayer.pause();
+                        mMediaPlayer.stop();
+                        mMediaPlayer.reset();
+                        startSpeechRecognizer();
                     }
                 }
                 if (!loading && !intro) {
@@ -263,6 +267,19 @@ public class StoryLineActivity extends CardboardActivity
         }
     }
 
+    public boolean onError(MediaPlayer mp, int what, int extra)
+    {
+        Log.e(getPackageName(), String.format("Error(%s%s)", what, extra));
+
+        if(what == MediaPlayer.MEDIA_ERROR_SERVER_DIED)
+            mp.reset();
+
+        else if(what == MediaPlayer.MEDIA_ERROR_UNKNOWN)
+            mp.reset();
+
+        return true;
+    }
+
     class listener implements RecognitionListener
     {
         public void onReadyForSpeech(Bundle params)
@@ -303,24 +320,16 @@ public class StoryLineActivity extends CardboardActivity
 //                    currentIndex=0;
 //                textSwitcher.setText(textToShow[currentIndex]);
 //            }
-            if (stringContainsItemFromList(str.toLowerCase(),oscarOpt)){
-                try {
-                    mMediaPlayer.setDataSource(introAudio[1]);
-                    mMediaPlayer.prepare();
-                    tap++;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            int index = stringContainsItemFromList(str.toLowerCase(),oscarOpt) ? 1 : stringContainsItemFromList(str.toLowerCase(),ladyOpt) ? 2 : 0;
+
+            try {
+                mMediaPlayer.setDataSource(introAudio[index]);
+                mMediaPlayer.prepare();
+                tap++;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            else if (stringContainsItemFromList(str.toLowerCase(),ladyOpt)){
-                try {
-                    mMediaPlayer.setDataSource(introAudio[2]);
-                    mMediaPlayer.prepare();
-                    tap++;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+
             for (int i = 0; i < data.size(); i++) {
                 Log.d(TAG, "result " + data.get(i));
             }
@@ -422,7 +431,7 @@ public class StoryLineActivity extends CardboardActivity
 //        }
 //        super.onActivityResult(requestCode, resultCode, data);
 //    }
-    public static boolean stringContainsItemFromList(String inputString, String[] items)
+    public boolean stringContainsItemFromList(String inputString, String[] items)
     {
         for(int i =0; i < items.length; i++)
         {

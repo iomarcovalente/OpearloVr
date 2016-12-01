@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity  implements
     public void onSaveInstanceState(Bundle bundle)
     {
         super.onSaveInstanceState(bundle);
-        bundle.putBoolean("notifState", NOTIFICATION_STATE);
+        bundle.putBoolean("notifState", NOTIFICATION_STATE); //save the state of notification preference from Option Dialog
     }
 
     @Override
@@ -70,36 +70,10 @@ public class MainActivity extends AppCompatActivity  implements
 
         setContentView(R.layout.activity_main);
         mContext=getApplicationContext();
-        //initNotifications();
-        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
 
-        // Create an Intent to broadcast to the AlarmNotificationReceiver
-        mNotificationReceiverIntent = new Intent(MainActivity.this,
-                AlarmNotificationReceiver.class);
-        // Create an PendingIntent that holds the NotificationReceiverIntent
-        mNotificationReceiverPendingIntent = PendingIntent.getBroadcast(
-                MainActivity.this, 0, mNotificationReceiverIntent, 0);
+        initServices();
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
-                .addApi(Auth.GOOGLE_SIGN_IN_API)
-                .build();
-
-        mUsername = ANONYMOUS;
-
-        // Initialize Firebase Auth
-        mFirebaseAuth = FirebaseAuth.getInstance();
-        mFirebaseUser = mFirebaseAuth.getCurrentUser();
-
-        if (mFirebaseUser == null) {
-            // Not signed in, launch the Sign In activity
-            startActivity(new Intent(this, SignInActivity.class));
-            finish();
-            return;
-        } else {
-            mUsername = mFirebaseUser.getDisplayName();
-        }
-
+        initSignUp();
 
         // Initialize UI elements
         final TextView usernameView = (TextView) findViewById(R.id.welcomeUser);
@@ -123,6 +97,7 @@ public class MainActivity extends AppCompatActivity  implements
                 finish();
             }
         });
+
         Resources res = getResources();
         audio[0] = res.getStringArray(R.array.chapterOneMp3);
         audio[1] = res.getStringArray(R.array.chapterTwoMp3);
@@ -137,6 +112,7 @@ public class MainActivity extends AppCompatActivity  implements
         intent.putExtras(extras);
         startActivityForResult(intent,customRequest);
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -150,6 +126,40 @@ public class MainActivity extends AppCompatActivity  implements
             startNewGame(findViewById(android.R.id.content).getRootView());
         }
     }
+
+    public void initSignUp(){
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this /* FragmentActivity */, this /* OnConnectionFailedListener */)
+                .addApi(Auth.GOOGLE_SIGN_IN_API)
+                .build();
+
+        mUsername = ANONYMOUS;
+
+        // Initialize Firebase Auth
+        mFirebaseAuth = FirebaseAuth.getInstance();
+        mFirebaseUser = mFirebaseAuth.getCurrentUser();
+
+        if (mFirebaseUser == null) {
+            // Not signed in, launch the Sign In activity
+            startActivity(new Intent(this, SignInActivity.class));
+            finish();
+            return;
+        } else {
+            mUsername = mFirebaseUser.getDisplayName();
+        }
+    }
+
+    public void initServices(){
+        mAlarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+        // Create an Intent to broadcast to the AlarmNotificationReceiver
+        mNotificationReceiverIntent = new Intent(MainActivity.this,
+                AlarmNotificationReceiver.class);
+        // Create an PendingIntent that holds the NotificationReceiverIntent
+        mNotificationReceiverPendingIntent = PendingIntent.getBroadcast(
+                MainActivity.this, 0, mNotificationReceiverIntent, 0);
+    }
+
     public class OptionsDialogClass extends Dialog implements
             android.view.View.OnClickListener {
 
@@ -185,7 +195,6 @@ public class MainActivity extends AppCompatActivity  implements
 
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    // TODO Auto-generated method stub
 
                     if (buttonView.isChecked()) {
                         NOTIFICATION_STATE = true;
@@ -218,13 +227,10 @@ public class MainActivity extends AppCompatActivity  implements
                     startActivity(new Intent(mContext, SignInActivity.class));
                     break;
 //                case R.id.soundSwitch:
-//                    mAlarmManager.set(AlarmManager.RTC_WAKEUP,
-//                            System.currentTimeMillis() + INITIAL_ALARM_DELAY,
-//                            mNotificationReceiverPendingIntent);
+//                TODO: implement mute background music
 //                    break;
 //                case R.id.speedBar:
-//                    if (mAlarmManager != null)
-//                        mAlarmManager.cancel(mNotificationReceiverPendingIntent);
+//                TODO: increase / decrease speed of text on screen
 //                    break;
                 default:
                     break;
